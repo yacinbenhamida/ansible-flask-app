@@ -1,0 +1,38 @@
+- hosts: eu-west-1
+  become: true
+  # installing package without package manager
+  pre_tasks:
+    - name: Configure server requirements
+        ansible.builtin.package:
+          name:
+            - python3
+            - pip
+            - nginx
+            - flask
+          state: latest
+  tasks:
+    - name: "copy flask project from local to remote"
+      copy:
+        src: flask-app/
+        dest: /home/webserver
+        owner: root
+        group: ybh
+        mode: 0644
+    - name: "create systemd entry for flaskapp"
+      copy:
+        src: scripts/flask.service
+        dest: /etc/systemd/system/flask.service
+        owner: root
+        group: ybh
+        mode: 0755
+    - name: "create reverse proxy from nginx > flaskapp"
+      copy:
+        src: scripts/flask.conf
+        dest: /etc/nginx/conf.d/flask.conf
+        owner: root
+        group: ybh
+        mode: 0755
+    - name: "Apply changes to server"
+      raw: "cat < ./setup-nginx.sh"
+      args:
+        executable: /bin/bash
